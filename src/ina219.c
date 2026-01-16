@@ -537,14 +537,47 @@ ina219_error_t ina219_get_config(ina219_handle_t *handle, ina219_config_t *confi
 
 ina219_error_t ina219_calibrate(ina219_handle_t *handle, uint32_t shunt_resistor_mohm, uint32_t max_current_ma)
 {
-    /* TODO: Implement calibration */
-    return INA219_OK;
+    ina219_error_t result = INA219_ERROR_INVALID_PARAM;
+
+    if ((shunt_resistor_mohm > 0U) && (max_current_ma > 0U))
+    {
+        result = ina219_validate_handle(handle);
+
+        if (result == INA219_OK)
+        {
+            /* Update calibration parameters */
+            handle->calibration.shunt_resistor_mohm = shunt_resistor_mohm;
+            handle->calibration.max_current_ma = max_current_ma;
+
+            /* Calculate calibration values */
+            result = ina219_calculate_calibration(handle);
+
+            if (result == INA219_OK)
+            {
+                /* Write calibration to device */
+                result = ina219_write_register_internal(handle, INA219_REG_CALIBRATION, handle->calibration.calibration_value);
+            }
+        }
+    }
+
+    return result;
 }
 
 ina219_error_t ina219_get_calibration(const ina219_handle_t *handle, ina219_calibration_t *calibration)
 {
-    /* TODO: Implement get calibration */
-    return INA219_OK;
+    ina219_error_t result = INA219_ERROR_INVALID_PARAM;
+
+    if (calibration != NULL)
+    {
+        result = ina219_validate_handle(handle);
+
+        if (result == INA219_OK)
+        {
+            *calibration = handle->calibration;
+        }
+    }
+
+    return result;
 }
 
 /*===========================================================================*/
