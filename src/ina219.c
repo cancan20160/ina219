@@ -548,7 +548,7 @@ ina219_error_t ina219_get_calibration(const ina219_handle_t *handle, ina219_cali
 }
 
 /*===========================================================================*/
-/* PUBLIC FUNCTIONS - Measurements                                          */
+/* PUBLIC FUNCTIONS - Measurements                                           */
 /*===========================================================================*/
 
 ina219_error_t ina219_read_shunt_voltage(ina219_handle_t *handle, int32_t *voltage_uv)
@@ -682,7 +682,7 @@ ina219_error_t ina219_read_all(ina219_handle_t *handle, int32_t *shunt_voltage_u
 }
 
 /*===========================================================================*/
-/* PUBLIC FUNCTIONS - Status & Flags                                        */
+/* PUBLIC FUNCTIONS - Status & Flags                                         */
 /*===========================================================================*/
 
 ina219_error_t ina219_is_conversion_ready(ina219_handle_t *handle, bool *ready)
@@ -734,51 +734,131 @@ ina219_error_t ina219_is_overflow(ina219_handle_t *handle, bool *overflow)
 }
 
 /*===========================================================================*/
-/* PUBLIC FUNCTIONS - Register Access                                       */
+/* PUBLIC FUNCTIONS - Register Access                                        */
 /*===========================================================================*/
 
-ina219_error_t ina219_write_config_register(ina219_handle_t *handle,
-                                            uint16_t config)
+ina219_error_t ina219_write_config_register(ina219_handle_t *handle, int16_t config)
 {
-    /* TODO: Implement config register write */
-    return INA219_OK;
+    ina219_error_t result;
+
+    result = ina219_validate_handle(handle);
+
+    if (result == INA219_OK)
+    {
+        result = ina219_write_register_internal(handle, INA219_REG_CONFIG, config);
+
+        if (result == INA219_OK)
+        {
+            /* Update stored configuration */
+            ina219_register_to_config(config, &handle->config);
+        }
+    }
+
+    return result;
 }
 
-ina219_error_t ina219_read_config_register(ina219_handle_t *handle,
-                                           uint16_t *config)
+ina219_error_t ina219_read_config_register(ina219_handle_t *handle, uint16_t *config)
 {
-    /* TODO: Implement config register read */
-    return INA219_OK;
+    ina219_error_t result = INA219_ERROR_INVALID_PARAM;
+
+    if (config != NULL)
+    {
+        result = ina219_validate_handle(handle);
+
+        if (result == INA219_OK)
+        {
+            result = ina219_read_register_internal(handle, INA219_REG_CONFIG, config);
+        }
+    }
+
+    return result;
 }
 
-ina219_error_t ina219_write_calibration_register(ina219_handle_t *handle,
-                                                 uint16_t calibration)
+ina219_error_t ina219_write_calibration_register(ina219_handle_t *handle, uint16_t calibration)
 {
-    /* TODO: Implement calibration register write */
-    return INA219_OK;
+    ina219_error_t result;
+
+    result = ina219_validate_handle(handle);
+
+    if (result == INA219_OK)
+    {
+        result = ina219_write_register_internal(handle, INA219_REG_CALIBRATION, calibration);
+
+        if (result == INA219_OK)
+        {
+            /* Update stored calibration value */
+            handle->calibration.calibration_value = calibration;
+        }
+    }
+
+    return result;
 }
 
-ina219_error_t ina219_read_calibration_register(ina219_handle_t *handle,
-                                                uint16_t *calibration)
+ina219_error_t ina219_read_calibration_register(ina219_handle_t *handle, uint16_t *calibration)
 {
-    /* TODO: Implement calibration register read */
-    return INA219_OK;
-}
+    ina219_error_t result = INA219_ERROR_INVALID_PARAM;
 
-ina219_error_t ina219_read_register(ina219_handle_t *handle, uint8_t reg_addr, uint16_t *value)
-{
-    /* TODO: Implement register read */
-    return INA219_OK;
+    if (calibration != NULL)
+    {
+        result = ina219_validate_handle(handle);
+
+        if (result == INA219_OK)
+        {
+            result = ina219_read_register_internal(handle, INA219_REG_CALIBRATION, calibration);
+        }
+    }
+
+    return result;
 }
 
 ina219_error_t ina219_write_register(ina219_handle_t *handle, uint8_t reg_addr, uint16_t value)
 {
-    /* TODO: Implement register write */
-    return INA219_OK;
+    ina219_error_t result;
+
+    result = ina219_validate_handle(handle);
+
+    if (result == INA219_OK)
+    {
+        /* Validate register address (0x00 to 0x05) */
+        if (reg_addr <= INA219_REG_CALIBRATION)
+        {
+            result = ina219_write_register_internal(handle, reg_addr, value);
+        }
+        else
+        {
+            result = INA219_ERROR_INVALID_PARAM;
+        }
+    }
+    return result;
+}
+
+ina219_error_t ina219_read_register(ina219_handle_t *handle, uint8_t reg_addr, uint16_t *value)
+{
+    ina219_error_t result = INA219_ERROR_INVALID_PARAM;
+
+    if (value != NULL)
+    {
+        result = ina219_validate_handle(handle);
+
+        if (result == INA219_OK)
+        {
+            /* Validate register address (0x00 to 0x05) */
+            if (reg_addr <= INA219_REG_CALIBRATION)
+            {
+                result = ina219_read_register_internal(handle, reg_addr, value);
+            }
+            else
+            {
+                result = INA219_ERROR_INVALID_PARAM;
+            }
+        }
+    }
+
+    return result;
 }
 
 /*===========================================================================*/
-/* PUBLIC FUNCTIONS - Operating Mode Control                                */
+/* PUBLIC FUNCTIONS - Operating Mode Control                                 */
 /*===========================================================================*/
 
 ina219_error_t ina219_set_mode(ina219_handle_t *handle, ina219_mode_t mode)
